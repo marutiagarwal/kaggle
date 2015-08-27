@@ -8,8 +8,7 @@ from sklearn.preprocessing import StandardScaler
 import random
 import lasagne
 
-from sklearn import svm
-from sklearn.externals import joblib
+from svmClassifier import trySVM
 
 
 def load_train_data(path):
@@ -62,9 +61,9 @@ def evaluate(y_val, resultLabels):
 	fp = 0
 
 	for idx,label in enumerate(resultLabels):
-	# #      print 'ground truth label = ',test_y[idx]
+	   # print 'ground truth label = ',test_y[idx]
 	   label = label.tolist()
-	   print 'max prob = ',max(label)
+	   # print 'max prob = ',max(label)
 	   maxIndex = label.index(max(label))        
 	   if(maxIndex==y_val[idx] and max(label)>=0.5):
 	       tp += 1
@@ -74,19 +73,6 @@ def evaluate(y_val, resultLabels):
 	print 'fp = ',fp
 	print 'tp = ',tp
 	print 'Precision = ',tp/float(tp+fp)
-
-
-def trySVM(X_train, y_train, X_val, y_val):
-	print '-------------- training SVM --------------'
-	clf = svm.SVC(kernel='linear', probability=True)
-	clf.fit(X_train, y_train)
-	joblib.dump(clf, 'svm.pkl', compress=9)
-	print "training complete..."
-
-	print '-------------- testing SVM --------------'
-	resultLabels = clf.predict_proba(X_val)
-	evaluate(y_val, resultLabels)
- 	return clf
 
 
 if __name__ == '__main__':
@@ -122,13 +108,13 @@ if __name__ == '__main__':
 	print("Validation --> n_samples: %d, n_features: %d" % X_val.shape)
 
 	# SVM classifier
-	classifier = trySVM(X_train, y_train, X_val, y_val)
+	svm_classifier, y_val_pred = trySVM(X_train, y_train, X_val, y_val)
+	evaluate(y_val, y_val_pred)
 
-	# Testing data
-	X_test, ids = load_test_data("../data/test.csv", scaler)
+	# # Testing data
+	# X_test, ids = load_test_data("../data/test.csv", scaler)
 
-	# make predictions
-    submission = pd.DataFrame(preds, index=ids, columns=['target'])
-    submission.to_csv('BTB_Lasagne.csv')
-    
-    
+	# # make predictions
+ #    submission = pd.DataFrame(preds, index=ids, columns=['target'])
+ #    submission.to_csv('BTB_Lasagne.csv')
+
