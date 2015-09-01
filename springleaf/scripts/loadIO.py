@@ -9,6 +9,7 @@ import random
 import lasagne
 
 from svmClassifier import trySVM
+from featureProcessing import perprocess_train_features
 
 
 def load_train_data(path):
@@ -20,22 +21,6 @@ def load_train_data(path):
 	df = df.drop('target',1)
 	df = df.drop('ID',1)	
 	return df,labels
-
-
-def perprocess_train_features(df):
-	# Junk cols - Some feature engineering needed here
-	df = df.ix[:, 520:660].fillna(-1)
-	# df = df.fillna(-1)
-
-	X = df.values.copy()    
-    # np.random.shuffle(X)
-	X = X.astype(np.float32)
-
-	encoder = LabelEncoder()
-	y = encoder.fit_transform(labels).astype(np.int32)
-	scaler = StandardScaler()
-	X = scaler.fit_transform(X)
-	return X, y, encoder, scaler
 
 
 def load_test_data(path, scaler):
