@@ -32,7 +32,6 @@ def load_test_data(path, scaler):
     
     # Junk cols - Some feature engineering needed here
 	df = df.ix[:, 520:660].fillna(-1)
-	# df = df.fillna(-1)
 
 	X = df.values.copy()
 
@@ -76,7 +75,7 @@ if __name__ == '__main__':
 	print('Number of classes:', len(encoder.classes_))
 	num_classes = len(encoder.classes_)
 	num_features = X.shape[1]
-	# 1934 features originally !
+	# 1932 features originally !
 
 	# Validation data split
 	X_train = X[0:trainSize]
@@ -99,7 +98,7 @@ if __name__ == '__main__':
 	# # Testing data
 	# X_test, ids = load_test_data("../data/test.csv", scaler)
 
-	# # make predictions
- #    submission = pd.DataFrame(preds, index=ids, columns=['target'])
- #    submission.to_csv('BTB_Lasagne.csv')
+	# make predictions
+    # submission = pd.DataFrame(preds, index=ids, columns=['target'])
+    # submission.to_csv('BTB_Lasagne.csv')
 
