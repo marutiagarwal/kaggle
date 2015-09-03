@@ -11,6 +11,7 @@ import lasagne
 from svmClassifier import trySVM
 from featureProcessing import perprocess_train_features
 
+# http://pandas.pydata.org/pandas-docs/stable/tutorials.html
 
 def load_train_data(path):
 	print("Loading Train Data...")
@@ -70,7 +71,7 @@ if __name__ == '__main__':
 
 	# Training data
 	df, labels = load_train_data(train_data_file)
-	X, y, encoder, scaler = perprocess_train_features(df)
+	X, y, encoder, scaler = perprocess_train_features(df,labels)
 
 	print('Number of classes:', len(encoder.classes_))
 	num_classes = len(encoder.classes_)
