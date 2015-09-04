@@ -7,7 +7,7 @@ import dateutil.parser as dateparser
 import re
 import math
 from sklearn.preprocessing import Imputer
-from matplotlib.pyplot import plot, show
+from matplotlib.pyplot import plot, show, xlabel, ylabel
 
 # http://wavedatalab.github.io/datawithpython/visualize.html
 # http://pandas.pydata.org/pandas-docs/stable/missing_data.html
@@ -117,7 +117,17 @@ def encode_str_features(X, dict_str):
 	_X = deepcopy(X)
 
 
-def fill_missing_numerics(df, method='mean'):
+def delete_timestamp_cols(df):
+	timestamps = ['VAR_0073', 'VAR_0075', 'VAR_0156', 'VAR_0157', 'VAR_0158', 'VAR_0159',
+				  'VAR_0166', 'VAR_0167', 'VAR_0168', 'VAR_0169', 'VAR_0176', 'VAR_0177',
+				  'VAR_0178', 'VAR_0179', 'VAR_0204', 'VAR_0217']
+	
+	print 'df.shape = ',df.shape
+	cat_df = df.drop(timestamps, axis=1)
+	print 'cat_df.shape = ',cat_df.shape
+	return cat_df
+
+def fill_missing_numeric_features(df, method='mean'):
 	for f in df.columns:
 		if(df[f].dtype == np.int64 or df[f].dtype == np.float64):
 			# print 'f = ',f,', dtype = ',df[f].dtype			
@@ -145,36 +155,71 @@ def delete_all_nan_cols_rows(df):
 	return df
 
 
+# def 
+# df[df.apply(pd.Series.nunique, axis=1) == 1]
+# df[df.apply(lambda x: min(x) == max(x), 1)]
+
+
+def delete_cols_with_same_features(df):
+	df_cat = df.loc[:, df.apply(pd.Series.nunique, axis=0) != 1]
+	return df_cat
+
+
+def delete_rows_with_same_features(df):
+	df_cat = df.loc[:, df.apply(pd.Series.nunique, axis=1) != 1]
+	return df_cat
+
+
+def process_timestamps(df):
+	for f in df.columns:
+		if(df[f].dtype == np.object):
+			print 'f = ',f,', dtype = ',df[f].dtype
+			df[f].value_counts().plot(kind='bar')
+			ylabel(f)
+			show()
+			# datetimestring = str(df[f][0])
+			# print 'datetimestring = ',datetimestring
+			# line = datetimestring[-9:]
+			# ret = re.match(':\d{2}:\d{2}:\d{2}',line)
+			# if ret is not None:			
+			# 	print 'line = ',line
+
+
 def perprocess_train_features(df, labels):
 	# Junk cols - Some feature engineering needed here
 	# df = df.ix[:, 520:660].fillna(-1)
 	# df = df.ix[:, :].fillna(-1)
-	# print 'df.shape = ',df.shape
-	# numExamples, numFeatures = df.shape
-	# featureNames = df.columns
 	# print 'df.dtypes = ',df.dtypes
 	
 	# print 'VAR_0001 = ',df['VAR_0001'].unique()
 	
 	# Get descriptive statistics for a specified column
 	# print df.VAR_0019.describe()
-
-	# print 'df.VAR_0001.dtype = ',df.VAR_0001.dtype
-	# print 'df.VAR_0002.dtype = ',df.VAR_0002.dtype
-	# print 'df.VAR_0002.mean() = ',df.VAR_0002.mean()
 	# print pd.Series.isnull(df['VAR_1934'])
 
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
 
 	# "delete" the zero-columns
-	print 'before deletion: df.shape = ',df.shape
+	print 'df.shape = ',df.shape
+	df = delete_timestamp_cols(df)
+	print 'delete_timestamp_cols: df.shape = ',df.shape
 	df = delete_all_zero_cols(df)
-	print 'after deletion: df.shape = ',df.shape
+	print 'delete_all_zero_cols: df.shape = ',df.shape
 	df = delete_all_nan_cols_rows(df)
-	print 'after deletion: df.shape = ',df.shape
+	print 'delete_all_nan_cols_rows: df.shape = ',df.shape
+	df = delete_cols_with_same_features(df)
+	print 'delete_cols_with_same_features: df.shape = ',df.shape
+	# process_timestamps(df)
+
+
+	# 
+	# delete columns/rows with too many missing entries
+	#  
+
+	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
 
 	# take care of missing numerics
-	# df = fill_missing_numerics(df)
+	# df = fill_missing_numeric_features(df)
 
 	# Change all NaNs to None
 	# df = df.where((pd.notnull(df)), None)
