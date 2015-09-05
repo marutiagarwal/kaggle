@@ -15,7 +15,7 @@ from featureProcessing import perprocess_train_features
 
 def load_train_data(path):
 	print("Loading Train Data...")
-	df = pd.read_csv(path, nrows=50000)
+	df = pd.read_csv(path, nrows=5000)
 	print("Loaded Train Data.")
 
 	labels = df.target

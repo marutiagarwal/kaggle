@@ -122,10 +122,10 @@ def delete_timestamp_cols(df):
 				  'VAR_0166', 'VAR_0167', 'VAR_0168', 'VAR_0169', 'VAR_0176', 'VAR_0177',
 				  'VAR_0178', 'VAR_0179', 'VAR_0204', 'VAR_0217']
 	
-	print 'df.shape = ',df.shape
-	cat_df = df.drop(timestamps, axis=1)
-	print 'cat_df.shape = ',cat_df.shape
-	return cat_df
+	# print 'df.shape = ',df.shape
+	df_cat = df.drop(timestamps, axis=1)
+	# print 'df_cat.shape = ',df_cat.shape
+	return df_cat
 
 def fill_missing_numeric_features(df, method='mean'):
 	for f in df.columns:
@@ -155,11 +155,6 @@ def delete_all_nan_cols_rows(df):
 	return df
 
 
-# def 
-# df[df.apply(pd.Series.nunique, axis=1) == 1]
-# df[df.apply(lambda x: min(x) == max(x), 1)]
-
-
 def delete_cols_with_same_features(df):
 	df_cat = df.loc[:, df.apply(pd.Series.nunique, axis=0) != 1]
 	return df_cat
@@ -185,16 +180,34 @@ def process_timestamps(df):
 			# 	print 'line = ',line
 
 
+def delete_cols_with_high_nan(df, _frac):
+	numExamples, numFeatures = df.shape
+	drop_cols = []
+	for f in df.columns:
+		frac = df[f].isnull().sum()/float(numExamples)
+		# print 'f = ',f,', nan count = ',df[f].isnull().sum(), ', frac = ',frac
+		if frac>=_frac:
+			drop_cols.append(f)
+
+	# drop columns with very high nan count
+	df_cat = df.drop(drop_cols, axis=1)
+	return df_cat 
+
+
 def perprocess_train_features(df, labels):
 	# Junk cols - Some feature engineering needed here
 	# df = df.ix[:, 520:660].fillna(-1)
 	# df = df.ix[:, :].fillna(-1)
+	# print 'df.shape = ',df.shape
+	# numExamples, numFeatures = df.shape
+	# featureNames = df.columns
 	# print 'df.dtypes = ',df.dtypes
 	
 	# print 'VAR_0001 = ',df['VAR_0001'].unique()
 	
 	# Get descriptive statistics for a specified column
 	# print df.VAR_0019.describe()
+
 	# print pd.Series.isnull(df['VAR_1934'])
 
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
@@ -203,12 +216,18 @@ def perprocess_train_features(df, labels):
 	print 'df.shape = ',df.shape
 	df = delete_timestamp_cols(df)
 	print 'delete_timestamp_cols: df.shape = ',df.shape
+
 	df = delete_all_zero_cols(df)
 	print 'delete_all_zero_cols: df.shape = ',df.shape
+
 	df = delete_all_nan_cols_rows(df)
 	print 'delete_all_nan_cols_rows: df.shape = ',df.shape
+
 	df = delete_cols_with_same_features(df)
 	print 'delete_cols_with_same_features: df.shape = ',df.shape
+
+	df = delete_cols_with_high_nan(df, 0.4)
+	print 'delete_cols_with_high_nan: df.shape = ',df.shape	
 	# process_timestamps(df)
 
 
@@ -230,7 +249,6 @@ def perprocess_train_features(df, labels):
 
 	# Check a boolean condition
 	# print (df.ix[:,'VAR_1933'] > 9998).any()
-
 
 	X = df.values.copy()
 	# print X
