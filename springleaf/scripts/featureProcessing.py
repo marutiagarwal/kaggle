@@ -160,7 +160,10 @@ def delete_all_nan_cols_rows(df, frac):
 
 
 def delete_cols_with_same_features(df):
+	feat1 = df.columns
 	df_cat = df.loc[:, df.apply(pd.Series.nunique, axis=0) != 1]
+	feat2 = df_cat.columns
+	print "removed all-same features = ",[item for item in feat1 if item not in feat2]
 	return df_cat
 
 
@@ -204,10 +207,28 @@ def delete_str_cols_with_high_negatives(df, _frac):
 		if df[f].dtype == np.object:
 			if '-1' in df[f].unique():
 				frac = df[f].value_counts('-1')['-1']
-				print 'f = ',f,', negatives count = ',frac
+				print 'f = ',f,', negatives str count = ',frac
+				if frac>=_frac:
+					drop_cols.append(f)
+		elif df[f].dtype == np.int64 or df[f].dtype == np.float64:
+			unique_list = []
+			for x in df[f].unique():
+				if not math.isnan(x):
+					unique_list.append(int(x))
+
+			# if features unique_list = [-1,0], delete this feature
+			if unique_list.sort()==[-1,0]:
+				drop_cols.append(f)
+				continue
+
+			if -1 in unique_list:
+				# print 'f = ',f, ', unique_list = ',unique_list
+				frac = df[f].value_counts('-1')[-1]
+				print 'f = ',f,', negatives int count = ',frac
 				if frac>=_frac:
 					drop_cols.append(f)
 
+	print 'removed high -ve features  = ',drop_cols
 	# drop columns with very high negatives count
 	df_cat = df.drop(drop_cols, axis=1)
 	return df_cat 
@@ -244,6 +265,7 @@ def perprocess_train_features(df, labels):
 
 	# print pd.Series.isnull(df['VAR_1934'])
 
+	print 'df.VAR_0309.dtype = ',df.VAR_0309.dtype
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
 
 	# "delete" the zero-columns
