@@ -146,13 +146,17 @@ def delete_all_zero_cols(df):
 	return df
 
 
-def delete_all_nan_cols_rows(df):
+def delete_all_nan_cols_rows(df, frac):
+	num_th = int(df.shape[0]*frac) # require this many non-NA value
 	# delete all nan cols
-	df = df.dropna(axis=0, how='all')
+	feat1 = df.columns
+	df1 = df.dropna(axis=1, how='all', thresh=num_th)
+	feat2 = df1.columns
+	print "removed nan features = ",[item for item in feat1 if item not in feat2]
 
 	# delete all nan rows
-	df = df.dropna(axis=1, how='all')
-	return df
+	df2 = df1.dropna(axis=0, how='all')
+	return df2
 
 
 def delete_cols_with_same_features(df):
@@ -250,21 +254,24 @@ def perprocess_train_features(df, labels):
 	df = delete_all_zero_cols(df)
 	print 'delete_all_zero_cols: df.shape = ',df.shape
 
-	df = delete_all_nan_cols_rows(df)
+	df = delete_all_nan_cols_rows(df, 0.9)
 	print 'delete_all_nan_cols_rows: df.shape = ',df.shape
 
 	df = delete_cols_with_same_features(df)
 	print 'delete_cols_with_same_features: df.shape = ',df.shape
 
-	df = delete_cols_with_high_nan(df, 0.25)
+	df = delete_cols_with_high_nan(df, 0.10)
 	print 'delete_cols_with_high_nan: df.shape = ',df.shape	
 
-
-	df = delete_str_cols_with_high_negatives(df, 0.25)
+	df = delete_str_cols_with_high_negatives(df, 0.10)
 	print 'delete_str_cols_with_high_negatives: df.shape = ',df.shape	
 
-	df = delete_str_cols_with_high_empty(df, 0.25)
+	df = delete_str_cols_with_high_empty(df, 0.10)
 	print 'delete_str_cols_with_high_empty: df.shape = ',df.shape	
+
+	print '\n\nremaining cols = \n'
+	for f in df.columns:
+		print f
 
 	# process_timestamps(df)
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
