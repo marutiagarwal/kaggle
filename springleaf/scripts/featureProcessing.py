@@ -168,7 +168,7 @@ def delete_rows_with_same_features(df):
 def process_timestamps(df):
 	for f in df.columns:
 		if(df[f].dtype == np.object):
-			print 'f = ',f,', dtype = ',df[f].dtype
+			# print 'f = ',f,', dtype = ',df[f].dtype
 			df[f].value_counts().plot(kind='bar')
 			ylabel(f)
 			show()
@@ -190,6 +190,36 @@ def delete_cols_with_high_nan(df, _frac):
 			drop_cols.append(f)
 
 	# drop columns with very high nan count
+	df_cat = df.drop(drop_cols, axis=1)
+	return df_cat 
+
+
+def delete_str_cols_with_high_negatives(df, _frac):
+	drop_cols = []
+	for f in df.columns:
+		if df[f].dtype == np.object:
+			if '-1' in df[f].unique():
+				frac = df[f].value_counts('-1')['-1']
+				print 'f = ',f,', negatives count = ',frac
+				if frac>=_frac:
+					drop_cols.append(f)
+
+	# drop columns with very high negatives count
+	df_cat = df.drop(drop_cols, axis=1)
+	return df_cat 
+
+
+def delete_str_cols_with_high_empty(df, _frac):
+	drop_cols = []
+	for f in df.columns:
+		if df[f].dtype == np.object:
+			if '' in df[f].unique() or '[]' in df[f].unique():
+				frac = df[f].value_counts('-1')['-1']
+				print 'f = ',f,', empty count = ',frac
+				if frac>=_frac:
+					drop_cols.append(f)
+
+	# drop columns with very high negatives count
 	df_cat = df.drop(drop_cols, axis=1)
 	return df_cat 
 
@@ -226,15 +256,17 @@ def perprocess_train_features(df, labels):
 	df = delete_cols_with_same_features(df)
 	print 'delete_cols_with_same_features: df.shape = ',df.shape
 
-	df = delete_cols_with_high_nan(df, 0.4)
+	df = delete_cols_with_high_nan(df, 0.25)
 	print 'delete_cols_with_high_nan: df.shape = ',df.shape	
+
+
+	df = delete_str_cols_with_high_negatives(df, 0.25)
+	print 'delete_str_cols_with_high_negatives: df.shape = ',df.shape	
+
+	df = delete_str_cols_with_high_empty(df, 0.25)
+	print 'delete_str_cols_with_high_empty: df.shape = ',df.shape	
+
 	# process_timestamps(df)
-
-
-	# 
-	# delete columns/rows with too many missing entries
-	#  
-
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
 
 	# take care of missing numerics
