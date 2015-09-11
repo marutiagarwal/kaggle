@@ -6,8 +6,10 @@ import time
 import dateutil.parser as dateparser
 import re
 import math
-from sklearn.preprocessing import Imputer
 from matplotlib.pyplot import plot, show, xlabel, ylabel
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
 
 # http://wavedatalab.github.io/datawithpython/visualize.html
 # http://pandas.pydata.org/pandas-docs/stable/missing_data.html
@@ -81,19 +83,37 @@ def feature_type(X):
 	print 'idx_timestamp = ',idx_timestamp
 
 
-def analyze_str_features(X):
-	nrows, ncols = X.shape
-	dict_str = dict()
-	for x in xrange(0,ncols):
-		for y in xrange(0,nrows):
-			if(type(X[y,x]) is str):
-				if x not in dict_str:
-					dict_str[x] = []
-				if X[y,x] not in dict_str[x]:
-					dict_str[x].append(X[y,x])
-	# print 'dict_str = ',dict_str
-	# encode_str_features(X, dict_str)
+def analyze_and_modify_nan_in_str_features(df):
+	# df.columns.str.lower()
+	print '\n\nremaining str cols = \n'
+	str_feats = []
+	for f in df.columns:
+		if df[f].dtype == np.object:
+			str_feats.append(f)
+			print f
+	# plot_str_features(df, str_feats)
+	for f in str_feats:
+		# print 'f = ',f,', before: df[f].unique() = ',df[f].unique()
+		df[f] = df[f].replace(np.nan, '-1', regex=True)
+		# print 'after: df[f].unique() = ',df[f].unique()
+	return df, str_feats
 
+def encode_str_features_into_numerics(df, str_feats):
+	str2int = dict()
+	for f in str_feats:
+		unique_feats = df[f].unique().tolist()
+		if '-1' in unique_feats:
+			unique_feats.remove('-1')
+
+		# store the mapping into a dict, to be used during scoring
+		if f not in str2int:
+			str2int[f] = dict()
+		for idx,feat in enumerate(unique_feats):
+			df[f] = df[f].replace(feat, idx, regex=True)
+			str2int[f][feat] = idx # store mapping in the dict
+
+		df[f] = df[f].replace('-1', -1, regex=True)
+	return df, str2int
 
 def encode_str_features(X, dict_str):
 	# prepare str feature->int mapping
@@ -186,6 +206,12 @@ def process_timestamps(df):
 			# if ret is not None:			
 			# 	print 'line = ',line
 
+def plot_str_features(df, str_feats):
+	for f in str_feats:
+		# print 'f = ',f,', dtype = ',df[f].dtype
+		df[f].value_counts().plot(kind='bar')
+		ylabel(f)
+		show()
 
 def delete_cols_with_high_nan(df, _frac):
 	numExamples, numFeatures = df.shape
@@ -201,7 +227,7 @@ def delete_cols_with_high_nan(df, _frac):
 	return df_cat 
 
 
-def delete_str_cols_with_high_negatives(df, _frac):
+def delete_cols_with_high_negatives(df, _frac):
 	drop_cols = []
 	for f in df.columns:
 		if df[f].dtype == np.object:
@@ -221,6 +247,10 @@ def delete_str_cols_with_high_negatives(df, _frac):
 				drop_cols.append(f)
 				continue
 
+			if len(unique_list)==1:
+				drop_cols.append(f)
+				continue
+
 			if -1 in unique_list:
 				# print 'f = ',f, ', unique_list = ',unique_list
 				frac = df[f].value_counts('-1')[-1]
@@ -237,12 +267,12 @@ def delete_str_cols_with_high_negatives(df, _frac):
 def delete_str_cols_with_high_empty(df, _frac):
 	drop_cols = []
 	for f in df.columns:
-		if df[f].dtype == np.object:
-			if '' in df[f].unique() or '[]' in df[f].unique():
-				frac = df[f].value_counts('-1')['-1']
-				print 'f = ',f,', empty count = ',frac
-				if frac>=_frac:
-					drop_cols.append(f)
+		# if df[f].dtype == np.object:
+		if '' in df[f].unique() or '[]' in df[f].unique():
+			frac = df[f].value_counts('-1')['-1']
+			print 'f = ',f,', empty count = ',frac
+			if frac>=_frac:
+				drop_cols.append(f)
 
 	# drop columns with very high negatives count
 	df_cat = df.drop(drop_cols, axis=1)
@@ -253,19 +283,12 @@ def perprocess_train_features(df, labels):
 	# Junk cols - Some feature engineering needed here
 	# df = df.ix[:, 520:660].fillna(-1)
 	# df = df.ix[:, :].fillna(-1)
-	# print 'df.shape = ',df.shape
-	# numExamples, numFeatures = df.shape
-	# featureNames = df.columns
-	# print 'df.dtypes = ',df.dtypes
-	
-	# print 'VAR_0001 = ',df['VAR_0001'].unique()
-	
+		
 	# Get descriptive statistics for a specified column
 	# print df.VAR_0019.describe()
 
 	# print pd.Series.isnull(df['VAR_1934'])
 
-	print 'df.VAR_0309.dtype = ',df.VAR_0309.dtype
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
 
 	# "delete" the zero-columns
@@ -285,21 +308,25 @@ def perprocess_train_features(df, labels):
 	df = delete_cols_with_high_nan(df, 0.10)
 	print 'delete_cols_with_high_nan: df.shape = ',df.shape	
 
-	df = delete_str_cols_with_high_negatives(df, 0.10)
-	print 'delete_str_cols_with_high_negatives: df.shape = ',df.shape	
+	df = delete_cols_with_high_negatives(df, 0.10)
+	print 'delete_cols_with_high_negatives: df.shape = ',df.shape	
 
 	df = delete_str_cols_with_high_empty(df, 0.10)
 	print 'delete_str_cols_with_high_empty: df.shape = ',df.shape	
 
-	print '\n\nremaining cols = \n'
-	for f in df.columns:
-		print f
+	# missing str feature values are : (-1 or nan), Convert nan to (-1)
+	df, str_feats = analyze_and_modify_nan_in_str_features(df)
 
-	# process_timestamps(df)
+	# now convert string features into numerics
+	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
+	df, str2int = encode_str_features_into_numerics(df, str_feats)
 	print 'df.get_dtype_counts() = \n',df.get_dtype_counts()
 
+	# process_timestamps(df)
+
 	# take care of missing numerics
-	# df = fill_missing_numeric_features(df)
+	df = fill_missing_numeric_features(df)
+	df.to_csv('../data/train_clean.csv', sep=',', encoding='utf-8')
 
 	# Change all NaNs to None
 	# df = df.where((pd.notnull(df)), None)

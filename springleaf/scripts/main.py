@@ -2,9 +2,6 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
-
 import random
 import lasagne
 
@@ -15,7 +12,7 @@ from featureProcessing import perprocess_train_features
 
 def load_train_data(path):
 	print("Loading Train Data...")
-	df = pd.read_csv(path, nrows=5000)
+	df = pd.read_csv(path, nrows=10000)
 	print("Loaded Train Data.")
 
 	labels = df.target
