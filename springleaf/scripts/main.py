@@ -6,13 +6,13 @@ import random
 import lasagne
 
 from svmClassifier import trySVM
-from featureProcessing import perprocess_train_features
+from featureProcessing import prune_train_features, encode_features_for_training
 
 # http://pandas.pydata.org/pandas-docs/stable/tutorials.html
 
 def load_train_data(path):
 	print("Loading Train Data...")
-	df = pd.read_csv(path, nrows=10000)
+	df = pd.read_csv(path, nrows=1000)
 	print("Loaded Train Data.")
 
 	labels = df.target
@@ -69,8 +69,9 @@ if __name__ == '__main__':
 
 	# Training data
 	df, labels = load_train_data(train_data_file)
-	X, y, encoder, scaler = perprocess_train_features(df,labels)
-
+	df_pruned = prune_train_features(df)
+	X, y, encoder, scaler = encode_features_for_training(df_pruned,labels)
+	
 	print('Number of classes:', len(encoder.classes_))
 	num_classes = len(encoder.classes_)
 	num_features = X.shape[1]
