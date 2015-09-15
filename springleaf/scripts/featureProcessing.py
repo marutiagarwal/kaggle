@@ -153,10 +153,14 @@ def fill_missing_numeric_features(df, method='mean'):
 			# print 'f = ',f,', dtype = ',df[f].dtype			
 			if (method=='mean'):
 				# print 'df[f].mean() = ',df[f].mean()
-				df[f].fillna(df[f].mean())
+				# df[f].fillna(df[f].mean())
+				df[f] = df[f].replace(np.nan, df[f].mean(), regex=True)
+				df[f] = df[f].replace(np.empty, df[f].mean(), regex=True)
 			else:
 				# print 'df[f].median() = ',df[f].median()
-				df[f].fillna(df[f].median())				
+				# df[f].fillna(df[f].median())
+				df[f] = df[f].replace(np.nan, df[f].median(), regex=True)
+				df[f] = df[f].replace(np.empty, df[f].median(), regex=True)
 	return df
 
 
@@ -326,6 +330,8 @@ def perprocess_train_features(df, labels):
 
 	# take care of missing numerics
 	df = fill_missing_numeric_features(df)
+
+	# write cleaned features into a csv for visualization
 	df.to_csv('../data/train_clean.csv', sep=',', encoding='utf-8')
 
 	# Change all NaNs to None
